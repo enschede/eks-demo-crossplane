@@ -1,8 +1,37 @@
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
+---
+apiVersion: v1
+kind: Namespace
 metadata:
-  name: crossplane-infra-phase1
-resources:
-  - namespace.yaml
-  - helmrepository.yaml
-  - helmrelease.yaml
+  name: crossplane-system
+
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: HelmRepository
+metadata:
+  name: crossplane-stable
+  namespace: crossplane-system
+spec:
+  interval: 12h
+  url: https://charts.crossplane.io/stable
+
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: crossplane
+  namespace: crossplane-system
+spec:
+  chart:
+    spec:
+      chart: crossplane
+      sourceRef:
+        kind: HelmRepository
+        name: crossplane-stable
+  interval: 1h
+  install:
+    remediation:
+      retries: 3
+  uninstall:
+    timeout: 5m
+    disableHooks: false
+    keepHistory: false
